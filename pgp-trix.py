@@ -14,12 +14,11 @@
 
 import PySimpleGUI as sg
 import inspect
-# import sys
 from sys import platform
 import os
 from datetime import datetime
 
-# - pip installable
+# -- pip installable
 import pgpy
 from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
 import hexdump
@@ -350,10 +349,6 @@ def gen_encrypt():
 def gen_key(gen):
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,[gen])    
-
-    # global key_loaded
-    # global key
-    # # global fingerprint
 
     vprint([key_loaded], globals())
 
