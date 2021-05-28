@@ -1,10 +1,10 @@
-# pgp.py
+# pgp-trix.py
 
 #--about-------------------------------------------
 #
-#   an in-browser secure(?) PGP message system
+#   an in-App secure(?) PGP message system
 #   see conrad's svelte JS example:
-#   https://app.conrads.website/board8/
+#   https://browser.conrads.website/board8/
 #
 #--about pgp----------------
 #
@@ -14,17 +14,19 @@
 
 import PySimpleGUI as sg
 import inspect
+# import sys
+from sys import platform
+import os
+from datetime import datetime
+
+# - pip installable
 import pgpy
 from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
-from datetime import datetime
-from sys import platform
-import sys
-import os
 import hexdump
 
 #--SYSTEM VARS--------------
-ssh_path = ''
-os_var = ''
+SSH_PATH = ''
+OS_VAR = ''
 
 #--STATE VARS----------------
 key_loaded = False
@@ -35,8 +37,8 @@ fingerprint = ''
 window = ''
 
 #--MESSAGES--------------------------------
-keygen_msg = "Key securely generated in-Browser"
-browser_key_msg = "Browser Key @"
+keygen_msg = "Key securely generated in-App"
+app_key_msg = "App Key @"
 app_intro = "PGP Python initialized. \n** NAME or EMAIL minimum requirement for generating PGP RSA 4096"
 
 #--COUNTERS---
@@ -111,11 +113,10 @@ def trace_out(trace, parms):
 def welcome():
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,"")    
-    status_msg([os_var,ssh_path])
+    status_msg([OS_VAR,SSH_PATH])
     status_msg([app_intro])
 
 def define_lo():
-    global window
 
     fields_lo = [
       [sg.Text('Name', key='-name-', size=(ts1,1), justification='r', font=tf1), 
@@ -131,10 +132,10 @@ def define_lo():
     #- https://github.com/PySimpleGUI/PySimpleGUI/issues/850
     switches_lo = [
       [sg.Button('Generate Key', button_color=bc1, font=f1, key='-GEN-', tooltip="Name or Email needed"), 
-      sg.Text('Generate a browser key or...', s=(35,1), auto_size_text=True, key='-BROWSERKEY-', font=f2, text_color="grey50")],
+      sg.Text('Generate an App key or...', s=(35,1), auto_size_text=True, key='-APPKEY-', font=f2, text_color="grey50")],
       [sg.Input(key='-LOAD-', enable_events=True, visible=False),
       sg.FileBrowse('Load Key File', target='-LOAD-', button_color=bc2, font=f1, key='-BROWSE-', 
-        file_types = (('Armored ASCII', '*.asc'),), initial_folder=ssh_path, tooltip=ssh_path), 
+        file_types = (('Armored ASCII', '*.asc'),), initial_folder=SSH_PATH, tooltip=SSH_PATH), 
       sg.Text('select an armored ascii filekey', key='-FILEKEY-', font=f2, text_color="grey50")]  ]
 
     submit_lo = [
@@ -169,26 +170,26 @@ def define_lo():
 
     window = sg.Window('Window Title', layout=col_lo, default_element_size=(12,1), finalize=True)
     window['-CONSOLE-'].expand(True, True)
+    return window
 
 #--STARTUP---------------find ssh directory and OS
 def startup():
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,"")  
-    global ssh_path
-    global os_var
 
     if platform == "linux" or platform == "linux2":
-        os_var = "Linux"
+        ver = "Linux"
     elif platform == "darwin":
-        os_var = "OS X"
+        ver = "OS X"
     elif platform == "win32":
-        os_var = "Windoze"
-        ssh_path = os.path.join(os.environ['USERPROFILE'], ".ssh")
-    if os.path.exists(ssh_path):
-        vprint(["local ssh directory discovered",ssh_path])
+        ver = "Windoze"
+        path = os.path.join(os.environ['USERPROFILE'], ".ssh")
+    if os.path.exists(path):
+        vprint(["local ssh directory discovered",path])
     else:
-        ssh_path = ''   # os.environ['USERPROFILE'] #<--other OS syntax not yet known
-        os_var = "operating system unknown"    
+        path = ''   # os.environ['USERPROFILE'] #<--other OS syntax not yet known
+        ver = "operating system unknown"
+    return path, ver
 
 def lock_key():
     trace=(inspect.currentframe().f_code.co_name)
@@ -264,13 +265,13 @@ def status_msg(feed, lead=None, error=None):
         window['-CONSOLE-'].update(background_color=con_bc)
     window['-CONSOLE-'].update(value=msg) 
 
-#--CLEAR_KEY()------------clear browser key, reset switches
+#--CLEAR_KEY()------------clear App key, reset switches
 def clear_key():
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,"")    
 
     key = "" 
-    feedback = status_msg(["Browser key cleared"], True)
+    feedback = status_msg(["App key cleared"], True)
     window['-BROWSE-'].update(button_color=bc2)
     window['-BROWSE-'].update(disabled=False)
     window['-FILEKEY-'].update(visible=True)   
@@ -285,7 +286,7 @@ def clear_key():
     window['-comment-'].update(font=tf1)
 
     window['-FINGERPRINT-'].update(value='no key loaded')
-    window['-BROWSERKEY-'].update(value='Generate a browser key or...')
+    window['-APPKEY-'].update(value='Generate an App key or...')
     window['-FILEKEY-'].update(value='select an armored ascii filekey')
     window['-CONSOLE-'].update(value=feedback)    
     window['-PUB-'].update(value="")
@@ -300,25 +301,16 @@ def get_time():
     xtime = now.strftime("%H:%M:%S")
     return xtime
 
-#--FILE_KEY()---------------load .asc from file
+#--FILE_KEY()---------------find .asc file, set path
 def file_key():
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,"")
 
-    global key_path
+    path = window['-LOAD-'].get()
 
-    key_path = window['-LOAD-'].get()
+    vprint([path],locals())
 
-    vprint([key_path],locals())
-
-    # key_loaded = True
-
-    # attempt=gen_key(False)
-    # if attempt:
-    #     pass
-    # else:
-    gen_key(False)
-        
+    return path        
 
 #--GEN_ENCRYPT()---------------button function, two modes
 def gen_encrypt():
@@ -359,21 +351,22 @@ def gen_key(gen):
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,[gen])    
 
-    global key_loaded
-    global key
-    global fingerprint
+    # global key_loaded
+    # global key
+    # # global fingerprint
 
     vprint([key_loaded], globals())
 
-    vprint([key_loaded], locals())
     if key_loaded:  # this pass is a clear key command, not a gen key command
         clear_key()
-        key_loaded = False      
-        return
+        loaded = False
+        k = ''
+        fp = ''
+        return loaded,k,fp
     # ----------  
     else:
         xtime = get_time()
-        browserkey_status = browser_key_msg + xtime
+        appkey_status = app_key_msg + xtime
 
         name = values['-NAME-']
         comment = values['-COMMENT-']
@@ -381,22 +374,22 @@ def gen_key(gen):
 
         if gen: #<- for generating keys, not loading
             #. generating a primary key. could be DSA or ECDSA as well
-            key = pgpy.PGPKey.new(PubKeyAlgorithm.RSAEncryptOrSign, 4096)
+            k = pgpy.PGPKey.new(PubKeyAlgorithm.RSAEncryptOrSign, 4096)
             #. key doesn't have a user ID yet, and therefore is not yet usable!
             uid = pgpy.PGPUID.new(name, comment=comment, email=email)
 
             #. add the new user id to the key. specify all preferences at this point
             #- because PGPy doesn't have any built-in key preference defaults at this time
             #- this example is similar to GnuPG 2.1.x defaults, with no expiration or preferred keyserver
-            key.add_uid(uid, usage={KeyFlags.Sign, KeyFlags.EncryptCommunications, KeyFlags.EncryptStorage},
+            k.add_uid(uid, usage={KeyFlags.Sign, KeyFlags.EncryptCommunications, KeyFlags.EncryptStorage},
               hashes=[HashAlgorithm.SHA256, HashAlgorithm.SHA384, HashAlgorithm.SHA512, HashAlgorithm.SHA224],
               ciphers=[SymmetricKeyAlgorithm.AES256, SymmetricKeyAlgorithm.AES192, SymmetricKeyAlgorithm.AES128],
               compression=[CompressionAlgorithm.ZLIB, CompressionAlgorithm.BZ2, CompressionAlgorithm.ZIP, CompressionAlgorithm.Uncompressed])
         else:   #<- for loading keys, not generating
             try:
                 #.D: read doc > https://pgpy.readthedocs.io/en/latest/api.html
-                key, others = pgpy.PGPKey.from_file(key_path)
-                # f = open(key_path, 'r')
+                k, others = pgpy.PGPKey.from_file(KEY_PATH)
+                # f = open(KEY_PATH, 'r')
                 # buff=(f.read()).strip()
                 # key = pgpy.PGPKey()
                 # key.parse(buff)
@@ -404,7 +397,7 @@ def gen_key(gen):
                 print("OS error: {0}".format(err))
             except ValueError:
                 status_msg(["File does not contain a valid RSA encryption key."], True, True)
-                return False
+                return False, '', ''
             except:
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
@@ -423,11 +416,11 @@ def gen_key(gen):
         # print(key.get_uid('nofriction@pm.me')) # returns a yes
         # # boo = pgpy.PGPUID.get_uid(key)# crash 
         # # boo = pgpy.get_uid(key) # crash
-        # name = pgpy.PGPKey.from_file(key_path)
+        # name = pgpy.PGPKey.from_file(KEY_PATH)
         # print(name)
 # END MESS------------------
         # pgpy.PGPKey.pub.verify("hi")
-        uid = key.get_uid
+        uid = k.get_uid
         # key.pubkey.verify(uid)
 
         # ASCII armored public key
@@ -441,32 +434,32 @@ def gen_key(gen):
         # print(key.get_uid(name))
         # print(key.get_uid('name'))
         # print(key.get_uid(email))
-        # keyring = PGPKeyring(key_path)
+        # keyring = PGPKeyring(KEY_PATH)
 #  no crash />         
 
 # with keyring.key(GNUPG_IDENTITY) as key:
 #     for userid in key.userids:
 #         print(userid.name)
 
-        key_loaded = True
+        loaded = True
         # fingerprint = key.fingerprint[0:24]+"..."
-        fingerprint = key.fingerprint        
+        fp = k.fingerprint        
         if gen:
             status_msg([keygen_msg], True)
-            window['-BROWSERKEY-'].update(value=browserkey_status)
+            window['-APPKEY-'].update(value=appkey_status)
         else:
-            key_file = key_path.split('/')[-1]  #: get last element in split list
-            window['-BROWSERKEY-'].update(value=key_file)
-            status_msg(["Armored ASCII key file loaded", key_path], True)
+            key_file = KEY_PATH.split('/')[-1]  #: get last element in split list
+            window['-APPKEY-'].update(value=key_file)
+            status_msg(["Armored ASCII key file loaded", KEY_PATH], True)
         status_msg([name,email,comment])
-        status_msg([key.fingerprint])
-        window['-PUB-'].update(value=key.pubkey)  
-        return True
+        status_msg([k.fingerprint])
+        window['-PUB-'].update(value=k.pubkey)  
+        return loaded, k, fp
 
 #==MAIN============================================
 # **** RUN STARTUP TO ESTABLISH REQUISITE VARIABLES
-startup()
-define_lo()
+SSH_PATH, OS_VAR = startup()
+window = define_lo()
 welcome()
 
 #--EVENT HANDLER-------------
@@ -493,11 +486,12 @@ while True:             # Event Loop
     #--Switch Events
     if event == '-GEN-':
         vprint(["Generate Key"])
-        gen_key(True)
+        key_loaded, key, fingerprint = gen_key(True)
 
     elif event == '-LOAD-':
         vprint(["Load File Key"])
-        file_key() 
+        KEY_PATH = file_key() 
+        key_loaded, key, fingerprint = gen_key(False)
 
     elif event == '-SIGN-':
         vprint(["Sign/Encrypt"])
