@@ -139,7 +139,7 @@ def define_lo():
 
     submit_lo = [
       [sg.Button('sign / encrypt', key="-SIGN-"), 
-      sg.Button('verify / decrypt', key="-VERIFY-")]]
+      sg.Button('verify / decrypt', key="-VERIFY-",disabled=True)]]
 
     pub_lo = [
       [sg.Multiline(s=(45,4), key='-PUB-', enable_events=True, background_color='grey')] ]
@@ -167,7 +167,7 @@ def define_lo():
       sg.Column(layout=pane2_lo, background_color="")],
       [sg.Multiline('', s=(45,5), autoscroll=True, key='-CONSOLE-', enable_events=True, font=con_f, background_color=con_bc, text_color=con_tc, no_scrollbar=True)]    ] 
 
-    window = sg.Window('Window Title', layout=col_lo, default_element_size=(12,1), finalize=True)
+    window = sg.Window('PGPY Trix', layout=col_lo, default_element_size=(12,1), finalize=True)
     window['-CONSOLE-'].expand(True, True)
     return window
 
@@ -311,7 +311,12 @@ def file_key():
 
     return path        
 
-#--GEN_ENCRYPT()---------------button function, two modes
+#--GEN_SIG()---------------button function
+def gen_sig():
+    msg |= priv_key.sign(msg)
+
+
+#--GEN_ENCRYPT()---------------button function
 def gen_encrypt():
     trace=(inspect.currentframe().f_code.co_name)
     trace_out(trace,"")
@@ -321,29 +326,30 @@ def gen_encrypt():
     msg = pgpy.PGPMessage.new(clear_txt)
     msg.message == clear_txt
 
+    sig = pgpy.PGPMessage.new(clear_txt)
+    sig.message == clear_txt
+
     # binary message format
     hexdump.hexdump(bytes(msg))
 
     # roundtrip binary encode/decode works
     bytes(msg) == bytes(pgpy.PGPMessage.from_blob(bytes(msg)))
 
-    # ascii message format
-    print(str(msg))
-
     # roundtrip ASCII encode/decode works
     str(msg) == str(pgpy.PGPMessage.from_blob(str(msg)))
 
-    # msg |= key.sign(msg)
-
+    sig |= key.sign(msg)
+    readout = "Encrupted message: \n"+ str(msg) + "\nSignature hash\n" + str(sig)
+    
+    
     # sg.popup_ok_cancel('popup')
-    sg.popup_scrolled(msg, title='Message Cypher', size=(40,20))
+    sg.popup_scrolled(readout, title='Message Cypher', size=(40,20))
 
     # you must use the | operator to attach the signature.
     # the following does NOT work:
     #
     #    signed_msg = priv_key.sign(msg)
 
-    print(str(msg))
 
 #--GEN_KEY()---------------button function, two modes
 def gen_key(gen):
