@@ -397,6 +397,9 @@ def gen_key(gen):
                 # buff=(f.read()).strip()
                 # key = pgpy.PGPKey()
                 # key.parse(buff)
+                if k.is_public == True:
+                  status_msg(["File appears to be a public key; please choose a private key."], True, True)
+                  return False, '', ''
             except OSError as err:
                 print("OS error: {0}".format(err))
             except ValueError:
