@@ -71,7 +71,7 @@ no = None
 
 #--DEBUG--------------------------------
 verbose = False
-debug = 0   # 1 = all print trace statements, 
+debug = 3   # 1 = all print trace statements, 
             # 2 = includes event tracing
             # 3 = includes function tracing
 
@@ -98,7 +98,7 @@ def vprint(feed, namespace=None): #: vprint is for deep debugging
     else:
         for m in feed:
             if m:
-                msg += m + ", "
+                msg += str(m) + ", "
         msg=msg[:-2]
         print((str(tcnt)+":"), msg)
         tcnt += 1
@@ -174,7 +174,8 @@ def define_lo():
 #--STARTUP---------------find ssh directory and OS
 def startup():
     trace=(inspect.currentframe().f_code.co_name)
-    trace_out(trace,"")  
+    trace_out(trace,"")
+    path = ver = ''
 
     if platform == "linux" or platform == "linux2":
         ver = "Linux"
@@ -307,8 +308,10 @@ def file_key():
 
     path = window['-LOAD-'].get()
 
+    if not path:  # the user likely has cancelled the file browser
+      path = None
     vprint([path],locals())
-
+    
     return path        
 
 #--GEN_SIG()---------------button function
@@ -491,8 +494,12 @@ while True:             # Event Loop
 
     elif event == '-LOAD-':
         vprint(["Load File Key"])
-        KEY_PATH = file_key() 
-        key_loaded, key, fingerprint = gen_key(False)
+        KEY_PATH = file_key()
+        if KEY_PATH == None:
+          status_msg(["file browse cancelled"], True)
+        else:
+          print("wahoooooooooo")
+          key_loaded, key, fingerprint = gen_key(False)
 
     elif event == '-SIGN-':
         vprint(["Sign/Encrypt"])
