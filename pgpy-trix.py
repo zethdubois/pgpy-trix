@@ -18,6 +18,8 @@ from sys import platform
 import os
 from datetime import datetime
 
+import json
+
 # -- pip installable
 import pgpy
 from pgpy.constants import PubKeyAlgorithm, KeyFlags, HashAlgorithm, SymmetricKeyAlgorithm, CompressionAlgorithm
@@ -71,7 +73,7 @@ no = None
 
 #--DEBUG--------------------------------
 verbose = False
-debug = 3   # 1 = all print trace statements, 
+debug = 0   # 1 = all print trace statements, 
             # 2 = includes event tracing
             # 3 = includes function tracing
 
@@ -342,7 +344,7 @@ def gen_encrypt():
     str(msg) == str(pgpy.PGPMessage.from_blob(str(msg)))
 
     sig |= key.sign(msg)
-    readout = "Encrupted message: \n"+ str(msg) + "\nSignature hash\n" + str(sig)
+    readout = "Encrypted message: \n"+ str(msg) + "\nSignature hash\n" + str(sig)
     
     
     # sg.popup_ok_cancel('popup')
@@ -409,44 +411,12 @@ def gen_key(gen):
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
 
-        #i! https://pysimplegui.readthedocs.io/en/latest/call%20reference/#window
-        # try using window.fill to fill in input fields with the loaded key data ()
-# MESS------------------        
-        # print(others)
-        # print(key.get_uid)
-        # print(type(key.get_uid))
-        # print(key.get_uid(name)) # does nothing
-        # print(key.get_uid(email))
-        # # print(pgpy.get_uid(key)) #crash
-        # print(key.get_uid('no friction'))
+        for uid in k.userids:
+          window['-NAME-'].update(value=uid.name)
+          window['-EMAIL-'].update(value=uid.email)
+          window['-COMMENT-'].update(value=uid.comment)
 
-        # print(key.get_uid('nofriction@pm.me')) # returns a yes
-        # # boo = pgpy.PGPUID.get_uid(key)# crash 
-        # # boo = pgpy.get_uid(key) # crash
-        # name = pgpy.PGPKey.from_file(KEY_PATH)
-        # print(name)
-# END MESS------------------
-        # pgpy.PGPKey.pub.verify("hi")
-        uid = k.get_uid
-        # key.pubkey.verify(uid)
-
-        # ASCII armored public key
-#---<no crash        
-        # pub = key.pubkey
-        # print(pub)
-        # print(pub.get_uid)
-        # print(str(pub.get_uid(name)))
-        # print(str(pub.get_uid(email)))
-        # print(key.fingerprint)
-        # print(key.get_uid(name))
-        # print(key.get_uid('name'))
-        # print(key.get_uid(email))
-        # keyring = PGPKeyring(KEY_PATH)
-#  no crash />         
-
-# with keyring.key(GNUPG_IDENTITY) as key:
-#     for userid in key.userids:
-#         print(userid.name)
+        # uid = k.get_uid
 
         loaded = True
         # fingerprint = key.fingerprint[0:24]+"..."
@@ -501,7 +471,6 @@ while True:             # Event Loop
         if KEY_PATH == None:
           status_msg(["file browse cancelled"], True)
         else:
-          print("wahoooooooooo")
           key_loaded, key, fingerprint = gen_key(False)
 
     elif event == '-SIGN-':
