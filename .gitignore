@@ -1,3 +1,6 @@
 pyproject.toml
 poetry.lock
 .replit
+
+# Visual Studio cache/options directory
+.vs/
