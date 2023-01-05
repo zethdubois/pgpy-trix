@@ -40,7 +40,7 @@ window = ''
 #--MESSAGES--------------------------------
 keygen_msg = "Key securely generated in-App"
 app_key_msg = "App Key @"
-app_intro = "PGP Python initialized. \n** NAME or EMAIL minimum requirement for generating PGP RSA 4096"
+app_intro = "\nPGP Python initialized. \n** NAME or EMAIL minimum requirement for generating PGP RSA 4096"
 
 #--COUNTERS---
 tcnt = 1
